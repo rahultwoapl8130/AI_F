@@ -14,7 +14,7 @@ export default function LoginPage() {
     // For now, we simulate a successful login and redirect to the chat.
     if (email && password) {
       localStorage.setItem('token', 'simulated_jwt_token');
-      router.push('/chat');
+      router.push('/admin');
     }
   };
 
