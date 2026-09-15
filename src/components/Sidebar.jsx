@@ -2,7 +2,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, MessageSquare, Ticket, BookOpen, Settings, LogOut, Activity } from 'lucide-react';
+import { LayoutDashboard, MessageSquare, Ticket, BookOpen, Settings, LogOut, Activity, Bot } from 'lucide-react';
 
 export default function Sidebar() {
   const pathname = usePathname();
@@ -11,6 +11,7 @@ export default function Sidebar() {
     { name: 'Overview', href: '/admin', icon: LayoutDashboard },
     { name: 'Live Workspace', href: '/admin/workspace', icon: MessageSquare },
     { name: 'Command Center', href: '/admin/command-center', icon: Activity },
+    { name: 'AI Playground', href: '/admin/playground', icon: Bot },
     { name: 'Tickets', href: '/admin/tickets', icon: Ticket },
     { name: 'Knowledge Base', href: '/admin/knowledge', icon: BookOpen },
     { name: 'Settings', href: '/admin/settings', icon: Settings },
