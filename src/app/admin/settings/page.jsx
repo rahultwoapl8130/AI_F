@@ -29,7 +29,7 @@ export default function SettingsPage() {
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-2">AI Routing Strategy</label>
             <select className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white">
-              <option>AI First (Auto-resolve if confidence > 80%)</option>
+              <option>AI First (Auto-resolve if confidence &gt; 80%)</option>
               <option>Human First (AI suggests answers to human)</option>
               <option>Balanced (AI handles FAQs, Humans handle billing)</option>
             </select>
