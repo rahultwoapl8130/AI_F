@@ -1,6 +1,6 @@
 "use client";
-import React from 'react';
-import { UploadCloud, FileText, Settings, Trash2 } from 'lucide-react';
+import React, { useState, useRef } from 'react';
+import { UploadCloud, FileText, Settings, Trash2, Loader2, CheckCircle } from 'lucide-react';
 
 const documents = [
   { title: 'Refund Policy 2026', type: 'PDF', size: '2.4 MB', synced: '2 hours ago' },
@@ -10,6 +10,48 @@ const documents = [
 ];
 
 export default function KnowledgeBasePage() {
+  const fileInputRef = useRef(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadStatus, setUploadStatus] = useState(null);
+
+  const handleFileUpload = async (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    setIsUploading(true);
+    setUploadStatus(null);
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      // Replace with your actual Render URL if different
+      const BACKEND_URL = "https://ai-b-2sny.onrender.com"; 
+      
+      const response = await fetch(`${BACKEND_URL}/api/v1/knowledge/upload`, {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (response.ok) {
+        setUploadStatus('success');
+        alert("File uploaded successfully! AI is learning it in the background.");
+      } else {
+        const error = await response.json();
+        setUploadStatus('error');
+        alert(`Upload failed: ${error.detail}`);
+      }
+    } catch (error) {
+      console.error(error);
+      setUploadStatus('error');
+      alert("Upload failed. Make sure the backend is running.");
+    } finally {
+      setIsUploading(false);
+      // Reset input so the same file can be uploaded again if needed
+      event.target.value = '';
+    }
+  };
+
   return (
     <div className="p-8">
       <div className="flex justify-between items-center mb-8">
@@ -17,10 +59,24 @@ export default function KnowledgeBasePage() {
           <h1 className="text-3xl font-bold text-slate-800">Knowledge Base</h1>
           <p className="text-slate-500 mt-1">Train your AI by uploading documents and providing links.</p>
         </div>
-        <button className="px-4 py-2 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 flex items-center gap-2">
-          <UploadCloud size={20} /> Add Content
+        <button 
+          onClick={() => fileInputRef.current?.click()}
+          className="px-4 py-2 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 flex items-center gap-2"
+          disabled={isUploading}
+        >
+          {isUploading ? <Loader2 className="animate-spin" size={20} /> : <UploadCloud size={20} />}
+          {isUploading ? 'Uploading...' : 'Add Content'}
         </button>
       </div>
+
+      {/* Hidden File Input */}
+      <input 
+        type="file" 
+        ref={fileInputRef}
+        onChange={handleFileUpload}
+        accept=".pdf,.txt,.md"
+        className="hidden"
+      />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         
@@ -30,12 +86,28 @@ export default function KnowledgeBasePage() {
             <h3 className="font-bold text-slate-800 mb-4">Import Data Source</h3>
             
             <div className="space-y-3">
-              <button className="w-full flex items-center justify-between p-4 border border-slate-200 rounded-lg hover:border-indigo-500 hover:bg-indigo-50 transition-colors text-left group">
+              <button 
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isUploading}
+                className={`w-full flex items-center justify-between p-4 border rounded-lg transition-colors text-left group ${
+                  isUploading ? 'border-slate-200 bg-slate-50 opacity-50 cursor-not-allowed' : 'border-slate-200 hover:border-indigo-500 hover:bg-indigo-50'
+                }`}
+              >
                 <div>
-                  <h4 className="font-semibold text-slate-700 group-hover:text-indigo-700">Upload PDF / DOCX</h4>
-                  <p className="text-xs text-slate-500 mt-1">Upload files directly to train the AI.</p>
+                  <h4 className={`font-semibold ${isUploading ? 'text-slate-500' : 'text-slate-700 group-hover:text-indigo-700'}`}>
+                    Upload PDF / DOCX
+                  </h4>
+                  <p className="text-xs text-slate-500 mt-1">
+                    {uploadStatus === 'success' ? 'Uploaded successfully!' : 'Upload files directly to train the AI.'}
+                  </p>
                 </div>
-                <FileText className="text-slate-400 group-hover:text-indigo-500" size={24} />
+                {isUploading ? (
+                  <Loader2 className="text-indigo-500 animate-spin" size={24} />
+                ) : uploadStatus === 'success' ? (
+                  <CheckCircle className="text-green-500" size={24} />
+                ) : (
+                  <FileText className="text-slate-400 group-hover:text-indigo-500" size={24} />
+                )}
               </button>
 
               <button className="w-full flex items-center justify-between p-4 border border-slate-200 rounded-lg hover:border-indigo-500 hover:bg-indigo-50 transition-colors text-left group">
