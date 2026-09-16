@@ -1,9 +1,69 @@
 "use client";
-import React, { useState } from 'react';
-import { Send, Bot, User, Paperclip, MoreVertical, Zap } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { Send, Bot, User, Paperclip, MoreVertical, Zap, Loader2 } from 'lucide-react';
 
 export default function AIPlayground() {
   const [inputText, setInputText] = useState('');
+  const [messages, setMessages] = useState([
+    {
+      role: 'ai',
+      content: 'Hello! I am the TechMart Support Orchestrator powered by NVIDIA Llama 3 & RAG. How can I assist you today?',
+      time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
+    }
+  ]);
+  const [isLoading, setIsLoading] = useState(false);
+  const chatEndRef = useRef(null);
+
+  // Auto-scroll to bottom
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
+
+  const handleSendMessage = async () => {
+    if (!inputText.trim() || isLoading) return;
+
+    const userMessage = {
+      role: 'user',
+      content: inputText,
+      time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
+    };
+
+    setMessages(prev => [...prev, userMessage]);
+    setInputText('');
+    setIsLoading(true);
+
+    try {
+      const BACKEND_URL = "https://ai-b-2sny.onrender.com";
+      const response = await fetch(`${BACKEND_URL}/api/v1/chat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: userMessage.content })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        const aiMessage = {
+          role: 'ai',
+          content: data.reply,
+          details: `Intent: ${data.intent} | Priority: ${data.priority} | Agent: ${data.routed_to}`,
+          time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
+        };
+        setMessages(prev => [...prev, aiMessage]);
+      } else {
+        setMessages(prev => [...prev, { role: 'ai', content: 'Sorry, I encountered an error connecting to the backend.', time: '' }]);
+      }
+    } catch (error) {
+      setMessages(prev => [...prev, { role: 'ai', content: 'Network error. Make sure the backend is running.', time: '' }]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleKeyPress = (e) => {
+    if (e.key === 'Enter') {
+      handleSendMessage();
+    }
+  };
 
   return (
     <div className="h-full flex flex-col bg-[#0B0D17] text-slate-200 font-sans">
@@ -15,72 +75,59 @@ export default function AIPlayground() {
             <Bot size={20} className="text-indigo-400" />
           </div>
           <div>
-            <h1 className="text-lg font-bold text-white">Vortex-7 Deep Intelligence</h1>
+            <h1 className="text-lg font-bold text-white">TechMart AI Support Agent</h1>
             <div className="flex items-center gap-2 mt-0.5">
               <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-              <span className="text-xs text-emerald-500 uppercase tracking-widest font-semibold">Active • Low Latency</span>
+              <span className="text-xs text-emerald-500 uppercase tracking-widest font-semibold">NVIDIA Llama 3 • Live</span>
             </div>
           </div>
         </div>
         
         <div className="flex items-center gap-4">
           <div className="px-3 py-1.5 bg-[#1C1F2E] border border-slate-700 rounded-full text-xs font-medium text-slate-300 flex items-center gap-2">
-            <Zap size={14} className="text-indigo-400" /> 500 Credits
+            <Zap size={14} className="text-indigo-400" /> API Connected
           </div>
-          <button className="p-2 hover:bg-[#1C1F2E] rounded-md transition-colors text-slate-400">
-            <MoreVertical size={20} />
-          </button>
         </div>
       </div>
 
       {/* Chat Area */}
       <div className="flex-1 overflow-y-auto p-8 space-y-8">
         
-        {/* AI Message */}
-        <div className="flex gap-4 max-w-4xl">
-          <div className="w-8 h-8 rounded-full bg-indigo-600/20 flex items-center justify-center shrink-0 border border-indigo-500/30">
-            <Bot size={16} className="text-indigo-400" />
-          </div>
-          <div>
-            <div className="bg-[#1C1F2E] p-4 rounded-2xl rounded-tl-sm border border-slate-700/50 text-sm text-slate-300 leading-relaxed">
-              Hello! I am the TechMart Support Orchestrator powered by Vortex-7. How can I assist you with your customer support automation today?
+        {messages.map((msg, idx) => (
+          <div key={idx} className={`flex gap-4 max-w-4xl ${msg.role === 'user' ? 'ml-auto flex-row-reverse' : ''}`}>
+            <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 border ${
+              msg.role === 'user' ? 'bg-slate-800 border-slate-700' : 'bg-indigo-600/20 border-indigo-500/30'
+            }`}>
+              {msg.role === 'user' ? <User size={16} className="text-slate-400" /> : <Bot size={16} className="text-indigo-400" />}
             </div>
-            <div className="text-[10px] text-slate-500 mt-2 ml-1">09:41 AM</div>
-          </div>
-        </div>
-
-        {/* User Message */}
-        <div className="flex gap-4 max-w-4xl ml-auto flex-row-reverse">
-          <div className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center shrink-0 border border-slate-700">
-            <User size={16} className="text-slate-400" />
-          </div>
-          <div>
-            <div className="bg-indigo-600 p-4 rounded-2xl rounded-tr-sm text-sm text-white leading-relaxed shadow-lg shadow-indigo-900/20">
-              Can you help me outline a strategy for handling refund requests automatically?
+            <div>
+              <div className={`p-4 rounded-2xl text-sm leading-relaxed ${
+                msg.role === 'user' 
+                  ? 'bg-indigo-600 rounded-tr-sm text-white shadow-lg shadow-indigo-900/20' 
+                  : 'bg-[#1C1F2E] rounded-tl-sm border border-slate-700/50 text-slate-300'
+              }`}>
+                {msg.content}
+                {msg.details && (
+                  <div className="mt-3 pt-3 border-t border-slate-700/50 text-xs text-indigo-400 font-mono">
+                    {msg.details}
+                  </div>
+                )}
+              </div>
+              <div className={`text-[10px] text-slate-500 mt-2 ${msg.role === 'user' ? 'mr-1 text-right' : 'ml-1'}`}>
+                {msg.time}
+              </div>
             </div>
-            <div className="text-[10px] text-slate-500 mt-2 mr-1 text-right">09:42 AM</div>
           </div>
-        </div>
-
-        {/* AI Message */}
-        <div className="flex gap-4 max-w-4xl">
-          <div className="w-8 h-8 rounded-full bg-indigo-600/20 flex items-center justify-center shrink-0 border border-indigo-500/30">
-            <Bot size={16} className="text-indigo-400" />
+        ))}
+        
+        {isLoading && (
+          <div className="flex gap-4 max-w-4xl">
+             <div className="w-8 h-8 rounded-full bg-indigo-600/20 flex items-center justify-center shrink-0 border border-indigo-500/30">
+               <Loader2 size={16} className="text-indigo-400 animate-spin" />
+             </div>
           </div>
-          <div>
-            <div className="bg-[#1C1F2E] p-4 rounded-2xl rounded-tl-sm border border-slate-700/50 text-sm text-slate-300 leading-relaxed">
-              <p className="mb-4">Certainly! Handling refund requests automatically requires a mix of policy verification, transactional access, and secure human-handoff rules. Here's a structural outline:</p>
-              <ul className="list-disc pl-5 space-y-2">
-                <li><strong>Intent Recognition:</strong> Detect phrases like "I want my money back" or "Return this item".</li>
-                <li><strong>Policy Check:</strong> Query the CRM to ensure the order is within the 30-day return window.</li>
-                <li><strong>Condition Assessment:</strong> Ask the user for the reason (e.g., damaged, wrong item).</li>
-                <li><strong>Action/Handoff:</strong> If policy allows, trigger the Stripe refund API. If edge case, route to a human agent.</li>
-              </ul>
-            </div>
-            <div className="text-[10px] text-slate-500 mt-2 ml-1">09:42 AM</div>
-          </div>
-        </div>
-
+        )}
+        <div ref={chatEndRef} />
       </div>
 
       {/* Input Area */}
@@ -93,15 +140,19 @@ export default function AIPlayground() {
             type="text"
             value={inputText}
             onChange={(e) => setInputText(e.target.value)}
-            placeholder="Type your message to Vortex-7 AI..."
+            onKeyPress={handleKeyPress}
+            disabled={isLoading}
+            placeholder="Type your message to the AI..."
             className="flex-1 bg-transparent border-none text-sm text-white focus:outline-none focus:ring-0 placeholder-slate-500"
           />
-          <button className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-sm font-medium flex items-center gap-2 transition-colors">
-            <Send size={16} /> Send
+          <button 
+            onClick={handleSendMessage}
+            disabled={isLoading || !inputText.trim()}
+            className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 disabled:bg-slate-700 disabled:text-slate-500 text-white rounded-lg text-sm font-medium flex items-center gap-2 transition-colors"
+          >
+            {isLoading ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />} 
+            Send
           </button>
-        </div>
-        <div className="text-center mt-3 text-[10px] font-medium text-slate-500 uppercase tracking-widest">
-          Powered by Vortex-7 Deep Intelligence v7.0.2
         </div>
       </div>
 
