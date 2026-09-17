@@ -2,17 +2,16 @@
 import React, { useState, useRef } from 'react';
 import { UploadCloud, FileText, Settings, Trash2, Loader2, CheckCircle } from 'lucide-react';
 
-const documents = [
+const initialDocuments = [
   { title: 'Refund Policy 2026', type: 'PDF', size: '2.4 MB', synced: '2 hours ago' },
   { title: 'Shipping & Delivery FAQ', type: 'Website URL', size: '--', synced: '1 day ago' },
-  { title: 'Account Lockout Procedures', type: 'Text Snippet', size: '12 KB', synced: '3 days ago' },
-  { title: 'API Integration Guide', type: 'PDF', size: '5.1 MB', synced: '1 week ago' },
 ];
 
 export default function KnowledgeBasePage() {
   const fileInputRef = useRef(null);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadStatus, setUploadStatus] = useState(null);
+  const [documents, setDocuments] = useState(initialDocuments);
 
   const handleFileUpload = async (event) => {
     const file = event.target.files[0];
@@ -35,6 +34,16 @@ export default function KnowledgeBasePage() {
 
       if (response.ok) {
         setUploadStatus('success');
+        
+        // Add new document to list
+        const newDoc = {
+          title: file.name,
+          type: file.name.split('.').pop().toUpperCase(),
+          size: (file.size / (1024 * 1024)).toFixed(1) + ' MB',
+          synced: 'Just now'
+        };
+        setDocuments(prev => [newDoc, ...prev]);
+        
         alert("File uploaded successfully! AI is learning it in the background.");
       } else {
         const error = await response.json();
