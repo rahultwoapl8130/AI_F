@@ -4,15 +4,28 @@ import { Send, Bot, User, Paperclip, MoreVertical, Zap, Loader2 } from 'lucide-r
 
 export default function AIPlayground() {
   const [inputText, setInputText] = useState('');
-  const [messages, setMessages] = useState([
-    {
-      role: 'ai',
-      content: 'Hello! I am the TechMart Support Orchestrator powered by NVIDIA Llama 3 & RAG. How can I assist you today?',
-      time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
+  const [messages, setMessages] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const savedMsgs = localStorage.getItem('techmart_chat');
+      if (savedMsgs) return JSON.parse(savedMsgs);
     }
-  ]);
+    return [
+      {
+        role: 'ai',
+        content: 'Hello! I am the TechMart Support Orchestrator powered by NVIDIA Llama 3 & RAG. How can I assist you today?',
+        time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
+      }
+    ];
+  });
   const [isLoading, setIsLoading] = useState(false);
   const chatEndRef = useRef(null);
+
+  // Save to localStorage whenever messages change
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('techmart_chat', JSON.stringify(messages));
+    }
+  }, [messages]);
 
   // Auto-scroll to bottom
   useEffect(() => {

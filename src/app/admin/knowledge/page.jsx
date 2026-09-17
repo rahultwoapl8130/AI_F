@@ -11,7 +11,22 @@ export default function KnowledgeBasePage() {
   const fileInputRef = useRef(null);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadStatus, setUploadStatus] = useState(null);
-  const [documents, setDocuments] = useState(initialDocuments);
+  
+  // Use localStorage to persist the documents list
+  const [documents, setDocuments] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const savedDocs = localStorage.getItem('techmart_documents');
+      if (savedDocs) return JSON.parse(savedDocs);
+    }
+    return initialDocuments;
+  });
+
+  // Save to localStorage whenever documents change
+  React.useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('techmart_documents', JSON.stringify(documents));
+    }
+  }, [documents]);
 
   const handleFileUpload = async (event) => {
     const file = event.target.files[0];
